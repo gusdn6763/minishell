@@ -30,9 +30,7 @@ int space_count(char *str)
 
     i = 0;
     while(str[i] == ' ' && str[i] != '\0')
-    {
         i++;
-    }
     return (i);
 }
 
@@ -42,12 +40,11 @@ int check_option(char *str)
     char *tmp;
 
     i = 0;
-    tmp = ft_substr(str, 0, 3);
-    if (!ft_strcmp(tmp, "-n "))
+    tmp = ft_substr(str, 0, 4);
+    if (!ft_strcmp(tmp, " -n "))
         return (1);
     return (0);
 }
-
 
 char **make_command(char *command, char *all, int i, int size)
 {
@@ -56,10 +53,8 @@ char **make_command(char *command, char *all, int i, int size)
 
     j = 0;
     if (!(ft_strcmp(command, "echo")) || !(ft_strcmp(command, "cd")) || !(ft_strcmp(command, "unset")) || !(ft_strcmp(command, "env")))
-    {
-        size++;
-        j = get_string_size(all, i);
-    }
+        if(j = get_string_size(all, i))
+            size++;
     tmp = (char **)malloc(sizeof(char *) * size + 1);
     tmp[0] = command;
     tmp[1] = ft_substr(all, i, j);
@@ -89,7 +84,7 @@ char **divid_command(char *str)
     command = ft_substr(str, i, j);
     i += space_count(&str[i + j]);
     if (!ft_strcmp(command, "echo"))
-        size += check_option(&str[i + j]);
+        size += check_option(&str[i + j - 1]);
     return (make_command(command, str, i + j, size));
 }
 
@@ -131,7 +126,7 @@ int main(int argc, char *argv[], char **envy)
 {
     char **envy_value;
     char *input;
-    char *command = "   echo -n       (value)    ;  cd value ; pwd ; export ; unset (value) ; env (value) ; exit";
+    char *command = "   echo -n       (value)    ;  cd (value) ; pwd ; export ; unset (value) ; env (value) ; exit";
 
     envy_value = get_envy_value(envy);      //envy_value 변수에 환경변수 값을 대입
     //check_value(envy_value);
