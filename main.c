@@ -11,6 +11,19 @@ void check_value(char **str)
     }
 }
 
+int get_string_size(char *str, int i)
+{
+    int j;
+
+    j = 0;
+    while ((str[i] != ' ' || str[i] == ';') && str[i] != '\0')
+    {
+        i++;
+        j++;
+    }
+    return (j);
+}
+
 int space_count(char *str)
 {
     int i;
@@ -35,7 +48,7 @@ int check_option(char *str)
     return (0);
 }
 
-//25줄로 줄여진다....
+
 char **make_command(char *command, char *all, int i, int size)
 {
     int j;
@@ -45,37 +58,20 @@ char **make_command(char *command, char *all, int i, int size)
     if (!(ft_strcmp(command, "echo")) || !(ft_strcmp(command, "cd")) || !(ft_strcmp(command, "unset")) || !(ft_strcmp(command, "env")))
     {
         size++;
-        while ((all[i] != ' ' || all[i] == ';') && all[i] != '\0')
-        {
-            i++;
-            j++;
-        }
+        j = get_string_size(all, i);
     }
     tmp = (char **)malloc(sizeof(char *) * size + 1);
     tmp[0] = command;
-    printf("size = (%d)  command :(%s)",size, tmp[0]);
-    if(size == 1)
+    tmp[1] = ft_substr(all, i, j);
+    printf("size = (%d)  command :(%s) value :(%s)",size, tmp[0], tmp[1]); 
+    if(size == 3)
     {
-        printf("\n");
+        i += space_count(&all[i + j]);
+        j = get_string_size(all, i + 2);
+        tmp[2] = ft_substr(all, i + 2, j);
+        printf(" option = (%s)", tmp[2]);
     }
-    else if(size == 2)
-    {
-        tmp[1] = ft_substr(all, i - j, j);
-        printf("  value = (%s)\n", tmp[1]);
-    }
-    else if(size == 3)
-    {
-        tmp[1] = ft_substr(all, i - j, j);
-        i += space_count(&all[i]);
-        while ((all[i] != ' ' || all[i] == ';') && all[i] != '\0')
-        {
-            i++;
-            j++;
-        }
-        tmp[2] = ft_substr(all, i - j + 2, j - 2);
-        printf("  value = |%s|  option = |(%s)|\n", tmp[2], tmp[1]);
-    }
-
+    printf("\n");
     return (tmp);
 }
 
@@ -87,19 +83,14 @@ char **divid_command(char *str)
     char *command;
 
     i = space_count(str);
-    j = 0;
+    j = get_string_size(str, i);
+    printf("i = (%d)  j = (%d) ",i, j);     //주석
     size = 1;
-    while ((str[i] != ' ' || str[i] == ';') && str[i] != '\0')
-    {
-        j++;
-        i++;
-    }
-    command = ft_substr(str, i - j, j);
-    printf("i = (%d)  j = (%d) ",i, j);
-    i += space_count(&str[i]);
+    command = ft_substr(str, i, j);
+    i += space_count(&str[i + j]);
     if (!ft_strcmp(command, "echo"))
-        size += check_option(&str[i]);
-    return (make_command(command, str, i, size));
+        size += check_option(&str[i + j]);
+    return (make_command(command, str, i + j, size));
 }
 
 void divid_commands(char *str)
