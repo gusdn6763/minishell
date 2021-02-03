@@ -11,18 +11,6 @@ void check_value(char **str)
     }
 }
 
-int get_string_size(char *str, int i)
-{
-    int j;
-
-    j = 0;
-    while ((str[i] != ' ' || str[i] == ';') && str[i] != '\0')
-    {
-        i++;
-        j++;
-    }
-    return (j);
-}
 
 int space_count(char *str)
 {
@@ -30,8 +18,21 @@ int space_count(char *str)
 
     i = 0;
     while(str[i] == ' ' && str[i] != '\0')
+    {
         i++;
+    }
     return (i);
+}
+
+int check_command(char *str, char *value)
+{
+    int i;
+    int j;
+
+    i = space_count(str);
+    j = 0;
+
+    return (1);
 }
 
 int check_option(char *str)
@@ -40,8 +41,8 @@ int check_option(char *str)
     char *tmp;
 
     i = 0;
-    tmp = ft_substr(str, 0, 4);
-    if (!ft_strcmp(tmp, " -n "))
+    tmp = ft_substr(str, 0, 3);
+    if (!ft_strcmp(tmp, "-n "))
         return (1);
     return (0);
 }
@@ -53,21 +54,26 @@ char **make_command(char *command, char *all, int i, int size)
 
     j = 0;
     if (!(ft_strcmp(command, "echo")) || !(ft_strcmp(command, "cd")) || !(ft_strcmp(command, "unset")) || !(ft_strcmp(command, "env")))
-        if(j = get_string_size(all, i))
-            size++;
+    {
+        size++;
+        while ((all[i] != ' ' || all[i] == ';') && all[i] != '\0')
+        {
+            i++;
+            j++;
+        }
+    }
     tmp = (char **)malloc(sizeof(char *) * size + 1);
     tmp[0] = command;
-    tmp[1] = ft_substr(all, i, j);
-    printf("size = (%d)  command :(%s) value :(%s)",size, tmp[0], tmp[1]); 
-    if(size == 3)
+    printf("size = (%d)  command :(%s)",size, tmp[0]);
+    if(size == 1)
     {
-        i += space_count(&all[i + j]);
-        j = get_string_size(all, i + 2);
-        tmp[2] = ft_substr(all, i + 2, j);
-        printf(" option = (%s)", tmp[2]);
+        printf("\n");
     }
-    printf("\n");
-    return (tmp);
+    else
+    {
+        tmp[1] = ft_substr(all, i - j, j);
+        printf("value = (%s)\n", tmp[1]);
+    }
 }
 
 char **divid_command(char *str)
@@ -78,14 +84,19 @@ char **divid_command(char *str)
     char *command;
 
     i = space_count(str);
-    j = get_string_size(str, i);
-    printf("i = (%d)  j = (%d) ",i, j);     //주석
+    j = 0;
     size = 1;
-    command = ft_substr(str, i, j);
-    i += space_count(&str[i + j]);
+    while ((str[i] != ' ' || str[i] == ';') && str[i] != '\0')
+    {
+        j++;
+        i++;
+    }
+    command = ft_substr(str, i - j, j);
+    printf("i = (%d)  j = (%d) ",i, j);
+    i += space_count(&str[i]);
     if (!ft_strcmp(command, "echo"))
-        size += check_option(&str[i + j - 1]);
-    return (make_command(command, str, i + j, size));
+        size += check_option(&str[i]);
+    return (make_command(command, str, i, size));
 }
 
 void divid_commands(char *str)
@@ -126,7 +137,7 @@ int main(int argc, char *argv[], char **envy)
 {
     char **envy_value;
     char *input;
-    char *command = "   echo -n       (value)    ;  cd (value) ; pwd ; export ; unset (value) ; env (value) ; exit";
+    char *command = "   echo -n  (value)    ;  cd value ; pwd ; export ; unset (value) ; env (value) ; exit";
 
     envy_value = get_envy_value(envy);      //envy_value 변수에 환경변수 값을 대입
     //check_value(envy_value);
