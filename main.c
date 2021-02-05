@@ -1,145 +1,232 @@
 #include "minishell.h"
 
-void check_value(char **str)
+void check_value(char** str)
 {
     int i = 0;
-    int j = 0;
-    while(str[i])
+    while (str[i] != NULL)
     {
-        printf("(%s)\n", str[i]);
+        printf("(%s) ", str[i]);
         i++;
     }
 }
 
-
-int space_count(char *str)
+int find_spec(char* str, char tmp, int j)
 {
     int i;
 
     i = 0;
-    while(str[i] == ' ' && str[i] != '\0')
+
+    j++;
+    while (str[j] != tmp)
     {
+        if (str[j] == '\0')
+            return (999);
+        j++;
         i++;
     }
     return (i);
 }
 
-int check_command(char *str, char *value)
+int get_string_size(char* str)
 {
     int i;
     int j;
-
-    i = space_count(str);
-    j = 0;
-
-    return (1);
-}
-
-int check_option(char *str)
-{
-    int i;
-    char *tmp;
 
     i = 0;
-    tmp = ft_substr(str, 0, 3);
-    if (!ft_strcmp(tmp, "-n "))
-        return (1);
-    return (0);
+    j = 0;
+    while ((str[i] != ' ' || str[i] == ';') && str[i] != '\0')
+    {
+        if (str[i] == '\'' || str[i] == '\"')
+            if (i > 0)
+            {
+                if (str[i - 1] != '\\')
+                {
+                    j = find_spec(str, str[i], i) + j + 1;
+                    i = find_spec(str, str[i], i) + i + 1;
+                }
+            }
+            else
+            {
+                j = find_spec(str, str[i], i) + j + 1;
+                i = find_spec(str, str[i], i) + i + 1;
+            }
+        i++;
+        j++;
+    }
+    return (j);
 }
 
-char **make_command(char *command, char *all, int i, int size)
+int space_count(char* str)
 {
-    int j;
-    char **tmp;
+    int i;
 
-    j = 0;
-    if (!(ft_strcmp(command, "echo")) || !(ft_strcmp(command, "cd")) || !(ft_strcmp(command, "unset")) || !(ft_strcmp(command, "env")))
+    i = 0;
+    while (str[i] == ' ' && str[i] != '\0')
+        i++;
+    return (i);
+}
+
+char* find_special(char* str, char spec)
+{
+    int i;
+    int count;
+    char* tmp;
+
+    i = 0;
+    count = 0;
+    tmp = (char*)malloc(ft_strlen(str) + 1);
+    while (str[i])
     {
-        size++;
-        while ((all[i] != ' ' || all[i] == ';') && all[i] != '\0')
+        if (str[i] == '\\')
         {
-            i++;
-            j++;
+            if (str[i + 1] == '\'' || str[i + 1] == '\"' || str[i + 1] == '$')
+                tmp[count++] = str[i++ + 1];
+        }
+        else if (str[i] != spec)
+            tmp[count++] = str[i];
+        i++;
+    }
+    tmp[count] = '\0';
+    free(str);
+    return (tmp);
+}
+
+char* get_env_value_to_command(char* str)
+{
+    int i;
+    int j;
+    char** tmp;
+
+    i = find_spec(str, '$', -1);
+    j = -1;
+    if (find_spec(str, '\'', -1) < find_spec(str, '\"', -1))
+        return (str);
+    while (g_envv[++j] != NULL)
+    {
+        tmp = ft_split(g_envv[j], '=');
+        if (0 == ft_strncmp(tmp[0], &str[i + 1], find_spec(&str[i], ' ', 0)))
+        {
+            free(str);
+            return (tmp[1]);
         }
     }
-    tmp = (char **)malloc(sizeof(char *) * size + 1);
-    tmp[0] = command;
-    printf("size = (%d)  command :(%s)",size, tmp[0]);
-    if(size == 1)
-    {
-        printf("\n");
-    }
-    else
-    {
-        tmp[1] = ft_substr(all, i - j, j);
-        printf("value = (%s)\n", tmp[1]);
-    }
+    free(str);
+    return (ft_strdup(""));
 }
 
-char **divid_command(char *str)
+char** make_command(char* str, int size)
+{
+    int i;
+    int k;
+    char** tmp;
+
+    i = 0;
+    k = size;
+    tmp = (char**)malloc(sizeof(char*) * size + 1);
+    while (k)
+    {
+        i += space_count(&str[i]);
+        tmp[size - k] = ft_substr(str, i, get_string_size(&str[i]));
+        if (find_spec(tmp[size - k], '$', -1) != 999)
+            tmp[size - k] = get_env_value_to_command(tmp[size - k]);
+        if (find_spec(tmp[size - k], '\'', -1) > find_spec(tmp[size - k], '\"', -1))
+            tmp[size - k] = find_special(tmp[size - k], '\"');
+        else if (find_spec(tmp[size - k], '\'', -1) < find_spec(tmp[size - k], '\"', -1))
+            tmp[size - k] = find_special(tmp[size - k], '\'');
+        i += get_string_size(&str[i]);
+        k--;
+    }
+    return (tmp);
+}
+
+char** divid_command(char* str)
 {
     int i;
     int j;
     int size;
-    char *command;
 
-    i = space_count(str);
+    i = 0;
     j = 0;
-    size = 1;
-    while ((str[i] != ' ' || str[i] == ';') && str[i] != '\0')
+    size = 0;
+    while (str[i])
     {
-        j++;
-        i++;
+        i += space_count(&str[i]);
+        j = get_string_size(&str[i]);
+        size++;
+        i += j;
+        i += space_count(&str[i]);
     }
-    command = ft_substr(str, i - j, j);
-    printf("i = (%d)  j = (%d) ",i, j);
-    i += space_count(&str[i]);
-    if (!ft_strcmp(command, "echo"))
-        size += check_option(&str[i]);
-    return (make_command(command, str, i, size));
+    return (make_command(str, size));
 }
 
-void divid_commands(char *str)
+//value=
+char* re_make_location(char* str)
 {
     int i;
-    char **divided_command;
-    char **current_command;
+    int j;
+    char* tmp;
+
+    if (!str)
+        return(NULL);
+    i = ft_strlen(str);
+    j = find_spec(str, '=', -1);
+    tmp = (char*)malloc(i + 3);
+    while (j != -1)
+        tmp[j--] = str[j];
+    j = find_spec(str, '=', -1);
+    tmp[j + 1] = '\"';
+    tmp[i + 1] = '\"';
+    tmp[i + 2] = '\0';
+    while (i - j - 1)
+        tmp[i--] = str[i - 1];
+    free(str);
+    return (tmp);
+}
+
+void divid_commands(char* str)
+{
+    int i;
+    char** divided_command;
+    char** current_command;
 
     i = 0;
     if (!str)
-        return ;
+        return;
     divided_command = ft_split(str, ';');
-    //check_value(divid_command);
-    while(divided_command[i])
+    while (divided_command[i])
     {
-        current_command = divid_command(divided_command[i++]);
+        current_command = divid_command(divided_command[i]);
+        if (!(ft_strncmp(current_command[0], "env", 3)) || !(ft_strncmp(current_command[0], "export", 3)))
+            current_command[1] = re_make_location(current_command[1]);
+        check_value(current_command);
+        i++;
+        printf("\n");
     }
 }
 
-char  **get_envy_value(char **envy)
+char** get_envy_value(char** envy)
 {
-    char **envy_value;
+    char** envy_value;
     int i;
 
     i = 0;
-
-    while(envy[i])
+    while (envy[i])
         i++;
-    if (!(envy_value = (char **)malloc(sizeof(char *) * i + 1)))
+    if (!(envy_value = (char**)malloc(sizeof(char*) * i + 1)))
         return (NULL);
     i = -1;
-    while(envy[++i])
+    while (envy[++i])
         envy_value[i] = ft_strdup(envy[i]);
     return (envy_value);
 }
 
-int main(int argc, char *argv[], char **envy)
+//1. $환경변수 
+//2. env, export 추가  
+int main(int argc, char* argv[], char** envy)
 {
-    char **envy_value;
-    char *input;
-    char *command = "   echo -n  (value)    ;  cd value ; pwd ; export ; unset (value) ; env (value) ; exit";
-
-    envy_value = get_envy_value(envy);      //envy_value 변수에 환경변수 값을 대입
-    //check_value(envy_value);
+    char** tmp;
+    char* input;
+    char* command = "echo > \' \"$HOME \" \' \" \'$HOME \' \"  \" \'$-n \' \" \\\"abc\" c \"\"c\"abd \" abc\' \" value  ; cd value ;pwd ; export ; unset value ; env value=/root ; exit";
+    g_envv = get_envy_value(envy);      //envy_value 변수에 환경변수 값을 대입
     divid_commands(command);                 //현재 ; 를 기준으로 코드를 나눔
 }
