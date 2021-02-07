@@ -1,4 +1,5 @@
 #include "minishell.h"
+#include <string.h>
 
 void check_value(char** str)
 {
@@ -70,21 +71,22 @@ char* find_special(char* str, char spec)
 {
     int i;
     int count;
+    int check;
     char* tmp;
 
-    i = 0;
+    i = -1;
     count = 0;
+    check = 0;
     tmp = (char*)malloc(ft_strlen(str) + 1);
-    while (str[i])
+    while (str[++i])
     {
         if (str[i] == '\\')
+            tmp[count++] = str[i++ + 1];
+        if (str[i] != spec || !check)
         {
-            if (str[i + 1] == '\'' || str[i + 1] == '\"' || str[i + 1] == '$')
-                tmp[count++] = str[i++ + 1];
-        }
-        else if (str[i] != spec)
+            check = 1;
             tmp[count++] = str[i];
-        i++;
+        }
     }
     tmp[count] = '\0';
     free(str);
@@ -114,6 +116,34 @@ char* get_env_value_to_command(char* str)
     return (ft_strdup(""));
 }
 
+int check_spec(char* str, char* spec)
+{
+    int i;
+
+    i = 0;
+    while (spec[i] != '\0')
+    {
+        if (str[0] == spec[i])
+            return (1);
+        i++;
+    }
+    return (0);
+}
+
+int check_error(char** str)
+{
+    int i;
+
+    i = 0;
+    while (str[i + 1] != NULL)
+    {
+        if (check_spec(str[i], "<>|") && check_spec(str[i + 1], "<>|"))
+            return  (1);
+        i++;
+    }
+    return (0);
+}
+
 char** make_command(char* str, int size)
 {
     int i;
@@ -136,6 +166,8 @@ char** make_command(char* str, int size)
         i += get_string_size(&str[i]);
         k--;
     }
+    if (check_error(tmp))
+        printf("에러");
     return (tmp);
 }
 
@@ -159,7 +191,6 @@ char** divid_command(char* str)
     return (make_command(str, size));
 }
 
-//value=
 char* re_make_location(char* str)
 {
     int i;
@@ -198,8 +229,8 @@ void divid_commands(char* str)
         current_command = divid_command(divided_command[i]);
         if (!(ft_strncmp(current_command[0], "env", 3)) || !(ft_strncmp(current_command[0], "export", 3)))
             current_command[1] = re_make_location(current_command[1]);
-        check_value(current_command);
         i++;
+        check_value(current_command);
         printf("\n");
     }
 }
@@ -220,13 +251,29 @@ char** get_envy_value(char** envy)
     return (envy_value);
 }
 
-//1. $환경변수 
-//2. env, export 추가  
+int get_spec_value(char** command, char* spec)
+{
+    int i;
+
+    i = -1;
+    while (command[++i] != NULL)
+        if (!strcmp(command[i], spec))
+            return(i);
+    return (0);
+}
+
 int main(int argc, char* argv[], char** envy)
 {
+    char** test = (char**)malloc(4);
+    test[0] = ft_strdup("echo");
+    test[2] = ft_strdup("\"<\"");
+    test[1] = ft_strdup("<");
+    printf("%d\n", get_spec_value(test, "<"));
+
     char** tmp;
     char* input;
-    char* command = "echo > \' \"$HOME \" \' \" \'$HOME \' \"  \" \'$-n \' \" \\\"abc\" c \"\"c\"abd \" abc\' \" value  ; cd value ;pwd ; export ; unset value ; env value=/root ; exit";
+    char* command = "echo > > \">\" \' \"$HOME \" \' \" \'$HOME \' \"  \" \'$-n \' \" \\\"abc\" c \"\"c\"abd \" abc\' \" value  ; cd value ;pwd ; export ; unset value ; env value=/root ; exit";
     g_envv = get_envy_value(envy);      //envy_value 변수에 환경변수 값을 대입
     divid_commands(command);                 //현재 ; 를 기준으로 코드를 나눔
+
 }
