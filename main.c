@@ -93,10 +93,28 @@ char* find_special(char* str, char spec)
     return (tmp);
 }
 
+// \" \'$-n \' \"
+char* make_except_envy(char* str, int i)
+{
+    int j;
+    char* tmp;
+    char* result;
+    char* test;
+
+    j = find_spec(str, ' ', i - 1);
+    tmp = (char*)malloc(ft_strlen(str) + 1);
+    result = ft_strdup(strncpy(tmp, str, i));
+    test = ft_strdup(strncat(result, &str[j + i], 3));
+    free(tmp);
+    free(result);
+    return (test);
+}
+
 char* get_env_value_to_command(char* str)
 {
     int i;
     int j;
+    char* return_tmp;
     char** tmp;
 
     i = find_spec(str, '$', -1);
@@ -112,8 +130,9 @@ char* get_env_value_to_command(char* str)
             return (tmp[1]);
         }
     }
+    return_tmp = make_except_envy(str, i);
     free(str);
-    return (ft_strdup(""));
+    return (return_tmp);
 }
 
 int check_spec(char* str, char* spec)
@@ -272,7 +291,7 @@ int main(int argc, char* argv[], char** envy)
 
     char** tmp;
     char* input;
-    char* command = "echo > > \">\" \' \"$HOME \" \' \" \'$HOME \' \"  \" \'$-n \' \" \\\"abc\" c \"\"c\"abd \" abc\' \" value  ; cd value ;pwd ; export ; unset value ; env value=/root ; exit";
+    char* command = "echo > > \">\" \' \"$HOME \" \' \" \'$HOME \' \"  \" \'$-n \'a\" \\\"abc\" c \"\"c\"abd \" abc\' \" value  ; cd value ;pwd ; export ; unset value ; env value=/root ; exit";
     g_envv = get_envy_value(envy);      //envy_value 변수에 환경변수 값을 대입
     divid_commands(command);                 //현재 ; 를 기준으로 코드를 나눔
 
