@@ -84,10 +84,9 @@ char* find_special(char* str, char spec)
         if (str[i] == '\\')
             tmp[count++] = str[i++ + 1];
         if (str[i] != spec || !check)
-        {
-            check = 1;
             tmp[count++] = str[i];
-        }
+        if (str[i] == spec)
+            check = 1;
     }
     tmp[count] = '\0';
     free(str);
