@@ -161,12 +161,24 @@ void free_command(char** str)
     free(str);
 }
 
-char* re_make_command(char* str)
+char* find_bin(char** str)
 {
+    int i;
+    int j;
     char* tmp;
 
-    tmp = ft_strdup(&str[5]);
-    free(str);
+    i = 1;
+    j = 0;
+    while (str[i])
+    {
+        if (!(ft_strncmp(str[i], "/bin/", 5)))
+        {
+            tmp = ft_strdup((&str[i][5]));
+            free(str[i]);
+            str[i] = tmp;
+        }
+        i++;
+    }
     return (tmp);
 }
 
@@ -175,11 +187,10 @@ int check_error(char** str)
     int i;
     char save;
 
-    i = 0;
-    while (str[i + 1] != NULL)
+    i = -1;
+    find_bin(str);
+    while (str[++i + 1] != NULL)
     {
-        if (!(ft_strncmp(str[i], "/bin/", 5)))
-            str[i] = re_make_command(str[i]);
         if ((save = check_spec(str[i], "<>|")) && check_spec(str[i + 1], "<>|"))
         {
             printf("bash: syntax error near unexpected token '%c' \n", save);
@@ -193,7 +204,6 @@ int check_error(char** str)
                 free_command(str);
                 return (1);
             }
-        i++;
     }
     return (0);
 }
@@ -224,7 +234,7 @@ char** make_command(char* str, int size)
         return (NULL);
     return (tmp);
 }
-
+// echo ""
 char** divid_command(char* str)
 {
     int i;
@@ -322,8 +332,7 @@ int get_spec_value(char** command, char* spec)
 
 int main(int argc, char* argv[], char** envy)
 {
-
-    char* command = "echo /bin/ls \">\" \' \"$HOME \" \' \" \'$HOME \' \"  \" \'$-n \'a\" \\\"abc\" c \"\"c\"abd \" abc\' \" value  ; cd value ;pwd ; export ; unset value ; env value=/root ; exit";
+    char* command = "echo  abc\" abc\"   \'/bin/ls\' /bin/ls \">\" \' \"$HOME \" \' \" \'$HOME \' \"  \" \'$-n \'a\" \\\"abc\" c \"\"c\"abd \" abc\' \" value  ; cd value ;pwd ; export ; unset value ; env value=/root ; exit";
     g_envv = get_envy_value(envy);      //envy_value 변수에 환경변수 값을 대입
     divid_commands(command);                 //현재 ; 를 기준으로 코드를 나눔
 
