@@ -1,6 +1,7 @@
 #include "minishell.h"
 #include <string.h>
 
+
 void check_value(char** str)
 {
     int i = 0;
@@ -93,7 +94,6 @@ char* find_special(char* str, char spec)
     return (tmp);
 }
 
-// \" \'$-n \' \"
 char* make_except_envy(char* str, int i)
 {
     int j;
@@ -135,7 +135,7 @@ char* get_env_value_to_command(char* str)
     return (return_tmp);
 }
 
-int check_spec(char* str, char* spec)
+char check_spec(char* str, char* spec)
 {
     int i;
 
@@ -143,21 +143,57 @@ int check_spec(char* str, char* spec)
     while (spec[i] != '\0')
     {
         if (str[0] == spec[i])
-            return (1);
+            return (spec[i]);
         i++;
     }
-    return (0);
+    return ('\0');
+}
+
+void free_command(char** str)
+{
+    int i;
+
+    i = 0;
+    while (str[i])
+    {
+        free(str[i]);
+        i++;
+    }
+    free(str);
+}
+
+char* re_make_command(char* str)
+{
+    char* tmp;
+
+    tmp = ft_strdup(&str[5]);
+    free(str);
+    return (tmp);
 }
 
 int check_error(char** str)
 {
     int i;
+    char save;
 
     i = 0;
     while (str[i + 1] != NULL)
     {
-        if (check_spec(str[i], "<>|") && check_spec(str[i + 1], "<>|"))
-            return  (1);
+        if (!(ft_strncmp(str[i], "/bin/", 5)))
+            str[i] = re_make_command(str[i]);
+        if ((save = check_spec(str[i], "<>|")) && check_spec(str[i + 1], "<>|"))
+        {
+            printf("bash: syntax error near unexpected token '%c' \n", save);
+            free_command(str);
+            return (1);
+        }
+        if (find_spec(str[i], '<', -1) != 999)
+            if (open(str[i + 1], O_RDWR, 0777) == -1)
+            {
+                printf("bash: (%s): No such file or directory\n", str[i + 1]);
+                free_command(str);
+                return (1);
+            }
         i++;
     }
     return (0);
@@ -186,7 +222,7 @@ char** make_command(char* str, int size)
         k--;
     }
     if (check_error(tmp))
-        printf("에러");
+        return (NULL);
     return (tmp);
 }
 
@@ -219,7 +255,8 @@ char* re_make_location(char* str)
     if (!str)
         return(NULL);
     i = ft_strlen(str);
-    j = find_spec(str, '=', -1);
+    if (j = find_spec(str, '=', -1) == 999)
+        return (str);
     tmp = (char*)malloc(i + 3);
     while (j != -1)
         tmp[j--] = str[j];
@@ -233,24 +270,27 @@ char* re_make_location(char* str)
     return (tmp);
 }
 
+
 void divid_commands(char* str)
 {
     int i;
     char** divided_command;
     char** current_command;
 
-    i = 0;
+    i = -1;
     if (!str)
         return;
     divided_command = ft_split(str, ';');
-    while (divided_command[i])
+    while (divided_command[++i])
     {
-        current_command = divid_command(divided_command[i]);
+        if ((current_command = divid_command(divided_command[i])) == NULL)
+            return;
         if (!(ft_strncmp(current_command[0], "env", 3)) || !(ft_strncmp(current_command[0], "export", 3)))
             current_command[1] = re_make_location(current_command[1]);
-        i++;
-        check_value(current_command);
-        printf("\n");
+
+
+        check_value(current_command);       //디버깅용
+        printf("\n");                       //디거깅용
     }
 }
 
@@ -283,15 +323,8 @@ int get_spec_value(char** command, char* spec)
 
 int main(int argc, char* argv[], char** envy)
 {
-    char** test = (char**)malloc(4);
-    test[0] = ft_strdup("echo");
-    test[2] = ft_strdup("\"<\"");
-    test[1] = ft_strdup("<");
-    printf("%d\n", get_spec_value(test, "<"));
 
-    char** tmp;
-    char* input;
-    char* command = "echo > > \">\" \' \"$HOME \" \' \" \'$HOME \' \"  \" \'$-n \'a\" \\\"abc\" c \"\"c\"abd \" abc\' \" value  ; cd value ;pwd ; export ; unset value ; env value=/root ; exit";
+    char* command = "echo /bin/ls \">\" \' \"$HOME \" \' \" \'$HOME \' \"  \" \'$-n \'a\" \\\"abc\" c \"\"c\"abd \" abc\' \" value  ; cd value ;pwd ; export ; unset value ; env value=/root ; exit";
     g_envv = get_envy_value(envy);      //envy_value 변수에 환경변수 값을 대입
     divid_commands(command);                 //현재 ; 를 기준으로 코드를 나눔
 
