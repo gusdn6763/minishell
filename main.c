@@ -161,25 +161,19 @@ void free_command(char** str)
     free(str);
 }
 
-char* find_bin(char** str)
+char* find_bin(char* str)
 {
     int i;
-    int j;
     char* tmp;
 
-    i = 1;
-    j = 0;
-    while (str[i])
+    i = space_count(str);
+    if (!(ft_strncmp(&str[i], "/bin/", 5)))
     {
-        if (!(ft_strncmp(str[i], "/bin/", 5)))
-        {
-            tmp = ft_strdup((&str[i][5]));
-            free(str[i]);
-            str[i] = tmp;
-        }
-        i++;
+        tmp = ft_strdup((&str[i + 5]));
+        free(str);
+        return (tmp);
     }
-    return (tmp);
+    return (str);
 }
 
 int check_error(char** str)
@@ -188,7 +182,7 @@ int check_error(char** str)
     char save;
 
     i = -1;
-    find_bin(str);
+    str[0] = find_bin(str[0]);
     while (str[++i + 1] != NULL)
     {
         if ((save = check_spec(str[i], "<>|")) && check_spec(str[i + 1], "<>|"))
