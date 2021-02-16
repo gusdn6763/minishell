@@ -1,24 +1,6 @@
 #include "../include/minishell.h"
 #include <signal.h>
 
-char* receive_cmd(void)
-{
-	char read_input[1024];
-	int readbyte;
-	readbyte = read(1,read_input,200);
-	read_input[readbyte - 1] = '\0';
-	if (read_input[0] == '\0')
-	{
-		return NULL;
-	}
-	if (!readbyte)
-	{
-		ft_putstr_fd("\n",1);
-		exit(1);
-	}
-	return ft_strdup(read_input);
-}
-
 void	signal_handler(int signo)
 {
 	if (signo == SIGINT)
@@ -27,7 +9,6 @@ void	signal_handler(int signo)
 		display_prompt();
 	}
 }
-
 
 int		ft_strcmp(const char* s1, const char* s2)
 {
@@ -339,8 +320,9 @@ char*	re_make_location(char* str)
 	if (j = sc_get(str, '=', -1) == 999)
 		return (str);
 	tmp = (char*)malloc(i + 3);
-	while (j != -1)
-		tmp[j--] = str[j];
+	while (--j != -1)
+		tmp[j] = str[j];
+	ft_putstr_fd(tmp, 1);
 	j = sc_get(str, '=', -1);
 	tmp[j + 1] = '\"';
 	tmp[i + 1] = '\"';
@@ -477,3 +459,7 @@ char	**split_space(char *input)
 	char **arr = ft_split(input, ' ');
 	return (arr);
 }
+
+
+
+
